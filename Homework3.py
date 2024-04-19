@@ -19,6 +19,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 import numpy as np
+import pandas as pd
 from datetime import datetime
 
 import PIL
@@ -65,7 +66,7 @@ img_width = 101
 # In[6]:
 
 
-data_dirpathname = r'C:\Users\ehven\Documents\flower_photos'
+data_dirpathname = r'E:\Data Science\ECE565 - Machine Learning\datasets\flower_photos'
 data_dir = pathlib.Path(data_dirpathname)
 
 class_names = os.listdir(data_dir)
@@ -238,9 +239,9 @@ for i in range(9):
 model = tf.keras.Sequential([
     tf.keras.layers.InputLayer(input_shape=(img_height, img_width, 3), name='Input_Shape_Layer'),
     tf.keras.layers.Rescaling(1./255),  # Normalize pixel values
-    tf.keras.layers.Conv2D(32, 3, activation='relu'),
+    tf.keras.layers.Conv2D(32, 3, activation='relu', padding='same'),
     tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Conv2D(64, 3, activation='relu'),
+    tf.keras.layers.Conv2D(64, 3, activation='relu', padding='same'),
     tf.keras.layers.MaxPooling2D(),
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(128, activation='relu'),
@@ -280,7 +281,7 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 # In[28]:
 
 
-early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', mode='max', patience=20)
+early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', mode='max', patience=5)
 
 
 # In[29]:
@@ -289,7 +290,7 @@ early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy
 model.fit(
     train_ds,
     validation_data=val_ds, 
-    epochs=11,
+    epochs=101,
     callbacks=[tensorboard_callback, early_stopping_callback],
     verbose=1
 )
@@ -339,11 +340,27 @@ class_names_array = np.array(class_names)
 # In[34]:
 
 
-plt.figure(figsize=(10, 8))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names_array, yticklabels=class_names_array)
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.title('Confusion Matrix')
+plt.figure(figsize=(10, 8))  # Increase figure size to make room for labels
+ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                 xticklabels=class_names, yticklabels=class_names)
+
+# Set tick labels appearance
+plt.xticks(rotation=45, ha='right', fontsize=10)  # Adjust font size or rotation as needed
+plt.yticks(fontsize=10)
+
+# Colorbar label and title
+plt.title('Confusion Matrix', fontsize=14)  # Increase title font size
+plt.ylabel('True Label', fontsize=12)
+plt.xlabel('Predicted Label', fontsize=12)
+
+# Loop over data dimensions and create text annotations with contrasting colors
+thresh = cm.max() / 2.
+for i in range(cm.shape[0]):
+    for j in range(cm.shape[1]):
+        ax.text(j+0.5, i+0.5, format(cm[i, j], 'd'),
+                ha='center', va='center',
+                color='white' if cm[i, j] > thresh else 'black')
+
 plt.show()
 
 
